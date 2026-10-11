@@ -1,0 +1,921 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local Camera = workspace.CurrentCamera
+
+-- ════════════════════════════════
+--           STATE
+-- ════════════════════════════════
+local State = {
+    ESP = false, Aimbot = false, BigHead = false,
+    FreeCAM = false, LoopFling = false, MusicFE = false,
+    AntiSuspend = false, AntiSuspendFearless = false,
+    InfinityYield = false, AimbotFOV = 150,
+    AimbotSmoothing = 0.15, AimPart = "Head",
+    ESPObjects = {}, IYLoaded = false,
+}
+
+-- ════════════════════════════════
+--           SCREEN GUI
+-- ════════════════════════════════
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NoxinGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+if syn and syn.protect_gui then
+    syn.protect_gui(ScreenGui)
+    ScreenGui.Parent = game.CoreGui
+elseif gethui then
+    ScreenGui.Parent = gethui()
+else
+    ScreenGui.Parent = game.CoreGui
+end
+
+-- ════════════════════════════════
+--         MAIN CONTAINER
+-- ════════════════════════════════
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0, 520, 0, 340)
+Main.Position = UDim2.new(0.5, -260, 0.5, -170)
+Main.BackgroundColor3 = Color3.fromRGB(6, 6, 6)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.ClipsDescendants = true
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(60, 60, 60)
+MainStroke.Thickness = 1
+MainStroke.Parent = Main
+
+-- ════════════════════════════════
+--         LEFT SIDEBAR
+-- ════════════════════════════════
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 130, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = Main
+
+local SideStroke = Instance.new("UIStroke")
+SideStroke.Color = Color3.fromRGB(40, 40, 40)
+SideStroke.Thickness = 1
+SideStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+SideStroke.Parent = Sidebar
+
+-- Avatar circle
+local AvatarFrame = Instance.new("Frame")
+AvatarFrame.Size = UDim2.new(0, 54, 0, 54)
+AvatarFrame.Position = UDim2.new(0.5, -27, 0, 14)
+AvatarFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+AvatarFrame.BorderSizePixel = 0
+AvatarFrame.Parent = Sidebar
+Instance.new("UICorner", AvatarFrame).CornerRadius = UDim.new(0.5, 0)
+
+local AvatarImg = Instance.new("ImageLabel")
+AvatarImg.Size = UDim2.new(1, 0, 1, 0)
+AvatarImg.BackgroundTransparency = 1
+AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId .. "&w=150&h=150"
+AvatarImg.Parent = AvatarFrame
+Instance.new("UICorner", AvatarImg).CornerRadius = UDim.new(0.5, 0)
+
+-- Name
+local NameLabel = Instance.new("TextLabel")
+NameLabel.Size = UDim2.new(1, -8, 0, 18)
+NameLabel.Position = UDim2.new(0, 4, 0, 72)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Text = LocalPlayer.DisplayName
+NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameLabel.TextScaled = true
+NameLabel.Font = Enum.Font.GothamBold
+NameLabel.Parent = Sidebar
+
+local UserLabel = Instance.new("TextLabel")
+UserLabel.Size = UDim2.new(1, -8, 0, 14)
+UserLabel.Position = UDim2.new(0, 4, 0, 90)
+UserLabel.BackgroundTransparency = 1
+UserLabel.Text = "@" .. LocalPlayer.Name
+UserLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
+UserLabel.TextScaled = true
+UserLabel.Font = Enum.Font.Gotham
+UserLabel.Parent = Sidebar
+
+-- Divider
+local Div1 = Instance.new("Frame")
+Div1.Size = UDim2.new(0.85, 0, 0, 1)
+Div1.Position = UDim2.new(0.075, 0, 0, 112)
+Div1.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Div1.BorderSizePixel = 0
+Div1.Parent = Sidebar
+
+-- NOXIN brand text
+local BrandLabel = Instance.new("TextLabel")
+BrandLabel.Size = UDim2.new(1, 0, 0, 16)
+BrandLabel.Position = UDim2.new(0, 0, 0, 120)
+BrandLabel.BackgroundTransparency = 1
+BrandLabel.Text = "— / / ✦ NOXIN —"
+BrandLabel.TextColor3 = Color3.fromRGB(80, 80, 80)
+BrandLabel.TextScaled = true
+BrandLabel.Font = Enum.Font.Gotham
+BrandLabel.Parent = Sidebar
+
+-- Sidebar nav buttons
+local NavList = Instance.new("Frame")
+NavList.Size = UDim2.new(1, 0, 0, 160)
+NavList.Position = UDim2.new(0, 0, 0, 142)
+NavList.BackgroundTransparency = 1
+NavList.Parent = Sidebar
+
+local NavLayout = Instance.new("UIListLayout")
+NavLayout.SortOrder = Enum.SortOrder.LayoutOrder
+NavLayout.Padding = UDim.new(0, 2)
+NavLayout.Parent = NavList
+
+-- Bottom links (player list / settings / world / exec)
+local BottomBar = Instance.new("Frame")
+BottomBar.Size = UDim2.new(1, 0, 0, 28)
+BottomBar.Position = UDim2.new(0, 0, 1, -28)
+BottomBar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+BottomBar.BorderSizePixel = 0
+BottomBar.Parent = Sidebar
+
+local BottomLayout = Instance.new("UIListLayout")
+BottomLayout.FillDirection = Enum.FillDirection.Horizontal
+BottomLayout.SortOrder = Enum.SortOrder.LayoutOrder
+BottomLayout.Padding = UDim.new(0, 0)
+BottomLayout.Parent = BottomBar
+
+-- ════════════════════════════════
+--         RIGHT CONTENT
+-- ════════════════════════════════
+local ContentWrapper = Instance.new("Frame")
+ContentWrapper.Name = "ContentWrapper"
+ContentWrapper.Size = UDim2.new(1, -130, 1, 0)
+ContentWrapper.Position = UDim2.new(0, 130, 0, 0)
+ContentWrapper.BackgroundTransparency = 1
+ContentWrapper.Parent = Main
+
+-- Top bar inside content
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 32)
+TopBar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = ContentWrapper
+
+local TopLabel = Instance.new("TextLabel")
+TopLabel.Size = UDim2.new(0.5, 0, 1, 0)
+TopLabel.Position = UDim2.new(0.04, 0, 0, 0)
+TopLabel.BackgroundTransparency = 1
+TopLabel.Text = "MAIN MENU"
+TopLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TopLabel.TextScaled = true
+TopLabel.Font = Enum.Font.GothamBold
+TopLabel.TextXAlignment = Enum.TextXAlignment.Left
+TopLabel.Parent = TopBar
+
+-- Close button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -28, 0.5, -12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+CloseBtn.TextScaled = true
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = TopBar
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
+CloseBtn.MouseButton1Click:Connect(function() Main.Visible = false end)
+
+-- Tab strip (MAIN MENU | ROLEPLAY MENU | ROLEPLAY MENU 2 | ROLEPLAY MENU 3)
+local TabStrip = Instance.new("Frame")
+TabStrip.Size = UDim2.new(1, 0, 0, 26)
+TabStrip.Position = UDim2.new(0, 0, 0, 32)
+TabStrip.BackgroundColor3 = Color3.fromRGB(6, 6, 6)
+TabStrip.BorderSizePixel = 0
+TabStrip.Parent = ContentWrapper
+
+local StripLayout = Instance.new("UIListLayout")
+StripLayout.FillDirection = Enum.FillDirection.Horizontal
+StripLayout.SortOrder = Enum.SortOrder.LayoutOrder
+StripLayout.Padding = UDim.new(0, 0)
+StripLayout.Parent = TabStrip
+
+-- Content area below tab strip
+local PageHolder = Instance.new("Frame")
+PageHolder.Name = "PageHolder"
+PageHolder.Size = UDim2.new(1, 0, 1, -58)
+PageHolder.Position = UDim2.new(0, 0, 0, 58)
+PageHolder.BackgroundTransparency = 1
+PageHolder.Parent = ContentWrapper
+
+-- ════════════════════════════════
+--       TAB STRIP BUILDER
+-- ════════════════════════════════
+local Pages = {}
+local ActivePage = nil
+
+local function CreateStripTab(name, label, order)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0, 95, 1, 0)
+    Btn.BackgroundTransparency = 1
+    Btn.Text = label
+    Btn.TextColor3 = Color3.fromRGB(90, 90, 90)
+    Btn.TextScaled = true
+    Btn.Font = Enum.Font.GothamBold
+    Btn.BorderSizePixel = 0
+    Btn.LayoutOrder = order
+    Btn.Parent = TabStrip
+
+    local Underline = Instance.new("Frame")
+    Underline.Size = UDim2.new(0.8, 0, 0, 2)
+    Underline.Position = UDim2.new(0.1, 0, 1, -2)
+    Underline.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Underline.BorderSizePixel = 0
+    Underline.Visible = false
+    Underline.Parent = Btn
+
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.BorderSizePixel = 0
+    Page.ScrollBarThickness = 3
+    Page.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
+    Page.Visible = false
+    Page.Parent = PageHolder
+
+    local Layout = Instance.new("UIListLayout")
+    Layout.SortOrder = Enum.SortOrder.LayoutOrder
+    Layout.Padding = UDim.new(0, 0)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Layout.Parent = Page
+
+    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Page.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 12)
+    end)
+
+    Btn.MouseButton1Click:Connect(function()
+        if ActivePage then
+            Pages[ActivePage].Page.Visible = false
+            Pages[ActivePage].Btn.TextColor3 = Color3.fromRGB(90, 90, 90)
+            Pages[ActivePage].Under.Visible = false
+            TopLabel.Text = name:upper()
+        end
+        ActivePage = name
+        Page.Visible = true
+        Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Underline.Visible = true
+        TopLabel.Text = label:upper()
+    end)
+
+    Pages[name] = {Btn = Btn, Page = Page, Under = Underline}
+    return Page
+end
+
+-- ════════════════════════════════
+--       NAV BUTTON (SIDEBAR)
+-- ════════════════════════════════
+local ActiveNav = nil
+local NavButtons = {}
+
+local function CreateNavBtn(label, targetPage, order)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, 0, 0, 28)
+    Btn.BackgroundTransparency = 1
+    Btn.Text = label
+    Btn.TextColor3 = Color3.fromRGB(100, 100, 100)
+    Btn.TextScaled = true
+    Btn.Font = Enum.Font.Gotham
+    Btn.BorderSizePixel = 0
+    Btn.LayoutOrder = order
+    Btn.Parent = NavList
+
+    local Indicator = Instance.new("Frame")
+    Indicator.Size = UDim2.new(0, 3, 0.6, 0)
+    Indicator.Position = UDim2.new(0, 0, 0.2, 0)
+    Indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Indicator.BorderSizePixel = 0
+    Indicator.Visible = false
+    Indicator.Parent = Btn
+
+    Btn.MouseButton1Click:Connect(function()
+        if ActiveNav and NavButtons[ActiveNav] then
+            NavButtons[ActiveNav].Btn.TextColor3 = Color3.fromRGB(100, 100, 100)
+            NavButtons[ActiveNav].Ind.Visible = false
+        end
+        ActiveNav = label
+        Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Indicator.Visible = true
+
+        -- Switch to the correct strip tab
+        if Pages[targetPage] then
+            Pages[targetPage].Btn.MouseButton1Click:Fire()
+        end
+    end)
+
+    NavButtons[label] = {Btn = Btn, Ind = Indicator}
+end
+
+-- ════════════════════════════════
+--       BOTTOM NAV (sidebar)
+-- ════════════════════════════════
+local BottomTabs = {"PLAYER LIST", "SETTINGS", "WORLD", "LUA EXECUTOR"}
+local BottomTargets = {"PlayerList", "Settings", "World", "Executor"}
+for i, t in ipairs(BottomTabs) do
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0.25, 0, 1, 0)
+    Btn.BackgroundTransparency = 1
+    Btn.Text = t
+    Btn.TextColor3 = Color3.fromRGB(70, 70, 70)
+    Btn.TextScaled = true
+    Btn.Font = Enum.Font.Gotham
+    Btn.BorderSizePixel = 0
+    Btn.LayoutOrder = i
+    Btn.Parent = BottomBar
+    local idx = i
+    Btn.MouseButton1Click:Connect(function()
+        if Pages[BottomTargets[idx]] then
+            Pages[BottomTargets[idx]].Btn.MouseButton1Click:Fire()
+        end
+    end)
+end
+
+-- ════════════════════════════════
+--      FEATURE ROW BUILDER
+-- ════════════════════════════════
+local function FeatureRow(parent, text, order, callback)
+    local Row = Instance.new("TextButton")
+    Row.Size = UDim2.new(0.92, 0, 0, 34)
+    Row.BackgroundTransparency = 1
+    Row.Text = ""
+    Row.BorderSizePixel = 0
+    Row.LayoutOrder = order
+    Row.Parent = parent
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.75, 0, 1, 0)
+    Label.Position = UDim2.new(0.04, 0, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(210, 210, 210)
+    Label.TextScaled = true
+    Label.Font = Enum.Font.Gotham
+    Label.TextXAlignment = Enum.TextXAlignment.Center
+    Label.Parent = Row
+
+    -- tiny dot decorator (like Monsy style)
+    local Dot = Instance.new("Frame")
+    Dot.Size = UDim2.new(0, 4, 0, 4)
+    Dot.Position = UDim2.new(0, 6, 0.5, -2)
+    Dot.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
+    Dot.BorderSizePixel = 0
+    Dot.Parent = Row
+    Instance.new("UICorner", Dot).CornerRadius = UDim.new(0.5, 0)
+
+    -- Toggle knob
+    local ToggleOuter = Instance.new("Frame")
+    ToggleOuter.Size = UDim2.new(0, 36, 0, 18)
+    ToggleOuter.Position = UDim2.new(1, -40, 0.5, -9)
+    ToggleOuter.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    ToggleOuter.BorderSizePixel = 0
+    ToggleOuter.Parent = Row
+    Instance.new("UICorner", ToggleOuter).CornerRadius = UDim.new(0, 9)
+
+    local Knob = Instance.new("Frame")
+    Knob.Size = UDim2.new(0, 12, 0, 12)
+    Knob.Position = UDim2.new(0, 3, 0.5, -6)
+    Knob.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    Knob.BorderSizePixel = 0
+    Knob.Parent = ToggleOuter
+    Instance.new("UICorner", Knob).CornerRadius = UDim.new(0.5, 0)
+
+    -- bottom separator line
+    local Sep = Instance.new("Frame")
+    Sep.Size = UDim2.new(0.9, 0, 0, 1)
+    Sep.Position = UDim2.new(0.05, 0, 1, -1)
+    Sep.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    Sep.BorderSizePixel = 0
+    Sep.Parent = Row
+
+    local on = false
+    Row.MouseButton1Click:Connect(function()
+        on = not on
+        TweenService:Create(Knob, TweenInfo.new(0.18), {
+            Position = on and UDim2.new(1, -15, 0.5, -6) or UDim2.new(0, 3, 0.5, -6),
+            BackgroundColor3 = on and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 100, 100)
+        }):Play()
+        TweenService:Create(ToggleOuter, TweenInfo.new(0.18), {
+            BackgroundColor3 = on and Color3.fromRGB(55, 55, 55) or Color3.fromRGB(30, 30, 30)
+        }):Play()
+        if callback then callback(on) end
+    end)
+end
+
+local function ActionRow(parent, text, order, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0.92, 0, 0, 34)
+    Btn.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    Btn.Text = text
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextScaled = true
+    Btn.Font = Enum.Font.GothamBold
+    Btn.BorderSizePixel = 0
+    Btn.LayoutOrder = order
+    Btn.Parent = parent
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+    Btn.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
+end
+
+-- ════════════════════════════════
+--        CREATE PAGES
+-- ════════════════════════════════
+local MainMenuPage = CreateStripTab("MainMenu",    "MAIN MENU",      1)
+local RoleplayPage = CreateStripTab("RoleplayMenu","ROLEPLAY MENU",  2)
+local Roleplay2Page= CreateStripTab("RoleplayMenu2","ROLEPLAY MENU 2",3)
+local Roleplay3Page= CreateStripTab("RoleplayMenu3","ROLEPLAY MENU 3",4)
+local PlayerListPage= CreateStripTab("PlayerList", "PLAYER LIST",    5)
+local SettingsPage = CreateStripTab("Settings",    "SETTINGS",       6)
+local WorldPage    = CreateStripTab("World",       "WORLD",          7)
+local ExecPage     = CreateStripTab("Executor",    "LUA EXECUTOR",   8)
+
+-- Sidebar nav
+CreateNavBtn("MAIN MENU",       "MainMenu",     1)
+CreateNavBtn("ROLEPLAY MENU",   "RoleplayMenu", 2)
+CreateNavBtn("ROLEPLAY MENU 2", "RoleplayMenu2",3)
+CreateNavBtn("ROLEPLAY MENU 3", "RoleplayMenu3",4)
+
+-- Default open
+Pages["MainMenu"].Btn.MouseButton1Click:Fire()
+NavButtons["MAIN MENU"].Btn.MouseButton1Click:Fire()
+
+-- ════════════════════════════════
+--       MAIN MENU FEATURES
+-- ════════════════════════════════
+FeatureRow(MainMenuPage, "ANTI SUSPEND (NOXIN)", 1, function(v)
+    State.AntiSuspend = v
+    if v then
+        -- Anti suspend: loop heartbeat keepalive
+        RunService.Heartbeat:Connect(function()
+            if State.AntiSuspend then
+                pcall(function()
+                    game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid").Health =
+                    game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid").Health
+                end)
+            end
+        end)
+    end
+end)
+
+FeatureRow(MainMenuPage, "ANTI SUSPEND FEARLESS ✦key : novertag (NOXIN)", 2, function(v)
+    State.AntiSuspendFearless = v
+    if v then
+        local args = {[1] = "novertag"}
+        pcall(function()
+            game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+        end)
+    end
+end)
+
+FeatureRow(MainMenuPage, "INFINITE YIELD (NOXIN)", 3, function(v)
+    if v and not State.IYLoaded then
+        State.IYLoaded = true
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+end)
+
+FeatureRow(MainMenuPage, "MUSIC EXPLOITS (NOXIN)", 4, function(v)
+    State.MusicFE = v
+    if v then
+        local s = Instance.new("Sound", workspace)
+        s.SoundId = "rbxassetid://1837756504"
+        s.Volume = 1
+        s.Looped = true
+        s:Play()
+        State._Music = s
+    else
+        if State._Music then State._Music:Stop() State._Music:Destroy() end
+    end
+end)
+
+FeatureRow(MainMenuPage, "ESP PLAYER (NOXIN)", 5, function(v)
+    State.ESP = v
+end)
+
+-- ════════════════════════════════
+--       ROLEPLAY PAGE
+-- ════════════════════════════════
+FeatureRow(RoleplayPage, "BIG HEAD", 1, function(v)
+    State.BigHead = v
+    for _, p in pairs(Players:GetPlayers()) do
+        local c = p.Character
+        local h = c and c:FindFirstChild("Head")
+        if h then h.Size = v and Vector3.new(4,4,4) or Vector3.new(2,1,1) end
+    end
+end)
+
+FeatureRow(RoleplayPage, "FREE CAM", 2, function(v)
+    State.FreeCAM = v
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = v and 0 or 16 end
+end)
+
+FeatureRow(RoleplayPage, "AIMBOT", 3, function(v) State.Aimbot = v end)
+FeatureRow(RoleplayPage, "LOOP FLING ALL", 4, function(v) State.LoopFling = v end)
+ActionRow(RoleplayPage, "FLING ALL (ONCE)", 5, function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local tc = p.Character
+            local lc = LocalPlayer.Character
+            local tr = tc and tc:FindFirstChild("HumanoidRootPart")
+            local lr = lc and lc:FindFirstChild("HumanoidRootPart")
+            if tr and lr then
+                for i = 1, 8 do
+                    lr.CFrame = tr.CFrame
+                    tr.Velocity = Vector3.new(math.random(-600,600), 900, math.random(-600,600))
+                    task.wait(0.01)
+                end
+            end
+        end
+    end
+end)
+
+-- ════════════════════════════════
+--      ROLEPLAY 2 PAGE
+-- ════════════════════════════════
+FeatureRow(Roleplay2Page, "WALKSPEED BOOST", 1, function(v)
+    local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if h then h.WalkSpeed = v and 80 or 16 end
+end)
+FeatureRow(Roleplay2Page, "JUMP BOOST", 2, function(v)
+    local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if h then h.JumpPower = v and 200 or 50 end
+end)
+FeatureRow(Roleplay2Page, "NOCLIP", 3, function(v)
+    State.Noclip = v
+    RunService.Stepped:Connect(function()
+        if State.Noclip and LocalPlayer.Character then
+            for _, p in pairs(LocalPlayer.Character:GetDescendants()) do
+                if p:IsA("BasePart") then p.CanCollide = false end
+            end
+        end
+    end)
+end)
+FeatureRow(Roleplay2Page, "INVISIBLE", 4, function(v)
+    local c = LocalPlayer.Character
+    if c then
+        for _, p in pairs(c:GetDescendants()) do
+            if p:IsA("BasePart") or p:IsA("Decal") then
+                p.Transparency = v and 1 or 0
+            end
+        end
+    end
+end)
+
+-- ════════════════════════════════
+--      ROLEPLAY 3 PAGE
+-- ════════════════════════════════
+FeatureRow(Roleplay3Page, "GOD MODE (HP LOOP)", 1, function(v)
+    State.GodMode = v
+    if v then
+        task.spawn(function()
+            while State.GodMode do
+                local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if h then h.Health = h.MaxHealth end
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+FeatureRow(Roleplay3Page, "FREEZE ALL PLAYERS", 2, function(v)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+            if r then r.Anchored = v end
+        end
+    end
+end)
+FeatureRow(Roleplay3Page, "TP TO SPAWN", 3, function(v)
+    if v then
+        local lr = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if lr then lr.CFrame = CFrame.new(0, 10, 0) end
+    end
+end)
+FeatureRow(Roleplay3Page, "SPIN SELF", 4, function(v)
+    State.Spin = v
+    if v then
+        task.spawn(function()
+            local t = 0
+            while State.Spin do
+                local lr = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if lr then lr.CFrame = lr.CFrame * CFrame.Angles(0, 0.15, 0) end
+                t = t + 1
+                task.wait(0.01)
+            end
+        end)
+    end
+end)
+
+-- ════════════════════════════════
+--       PLAYER LIST PAGE
+-- ════════════════════════════════
+local function PopulatePlayerList()
+    for _, c in pairs(PlayerListPage:GetChildren()) do
+        if not c:IsA("UIListLayout") and not c:IsA("UIPadding") then c:Destroy() end
+    end
+    for _, p in pairs(Players:GetPlayers()) do
+        local Row = Instance.new("Frame")
+        Row.Size = UDim2.new(0.92, 0, 0, 38)
+        Row.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+        Row.BorderSizePixel = 0
+        Row.Parent = PlayerListPage
+        Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 6)
+
+        local NL = Instance.new("TextLabel")
+        NL.Size = UDim2.new(0.6, 0, 0.5, 0)
+        NL.Position = UDim2.new(0.03, 0, 0.05, 0)
+        NL.BackgroundTransparency = 1
+        NL.Text = p.DisplayName
+        NL.TextColor3 = Color3.fromRGB(220, 220, 220)
+        NL.TextScaled = true
+        NL.Font = Enum.Font.GothamBold
+        NL.TextXAlignment = Enum.TextXAlignment.Left
+        NL.Parent = Row
+
+        local UL = Instance.new("TextLabel")
+        UL.Size = UDim2.new(0.6, 0, 0.4, 0)
+        UL.Position = UDim2.new(0.03, 0, 0.52, 0)
+        UL.BackgroundTransparency = 1
+        UL.Text = "@" .. p.Name
+        UL.TextColor3 = Color3.fromRGB(80, 80, 80)
+        UL.TextScaled = true
+        UL.Font = Enum.Font.Gotham
+        UL.TextXAlignment = Enum.TextXAlignment.Left
+        UL.Parent = Row
+
+        local TPBtn = Instance.new("TextButton")
+        TPBtn.Size = UDim2.new(0, 44, 0, 20)
+        TPBtn.Position = UDim2.new(1, -50, 0.5, -10)
+        TPBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        TPBtn.Text = "TP"
+        TPBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        TPBtn.TextScaled = true
+        TPBtn.Font = Enum.Font.GothamBold
+        TPBtn.BorderSizePixel = 0
+        TPBtn.Parent = Row
+        Instance.new("UICorner", TPBtn).CornerRadius = UDim.new(0, 4)
+        TPBtn.MouseButton1Click:Connect(function()
+            local lr = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local tr = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+            if lr and tr then lr.CFrame = tr.CFrame end
+        end)
+    end
+end
+
+ActionRow(PlayerListPage, "↺ REFRESH", 1, PopulatePlayerList)
+Players.PlayerAdded:Connect(PopulatePlayerList)
+Players.PlayerRemoving:Connect(PopulatePlayerList)
+
+-- ════════════════════════════════
+--       LUA EXECUTOR PAGE
+-- ════════════════════════════════
+local ExecBg = Instance.new("Frame")
+ExecBg.Size = UDim2.new(0.92, 0, 0, 160)
+ExecBg.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+ExecBg.BorderSizePixel = 0
+ExecBg.LayoutOrder = 1
+ExecBg.Parent = ExecPage
+Instance.new("UICorner", ExecBg).CornerRadius = UDim.new(0, 6)
+
+local ExecTitle = Instance.new("TextLabel")
+ExecTitle.Size = UDim2.new(1, 0, 0, 22)
+ExecTitle.BackgroundTransparency = 1
+ExecTitle.Text = "</> NOXIN EXECUTOR"
+ExecTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
+ExecTitle.TextScaled = true
+ExecTitle.Font = Enum.Font.GothamBold
+ExecTitle.Parent = ExecBg
+
+local ExecBox = Instance.new("TextBox")
+ExecBox.Size = UDim2.new(1, -10, 1, -28)
+ExecBox.Position = UDim2.new(0, 5, 0, 24)
+ExecBox.BackgroundTransparency = 1
+ExecBox.Text = "-- Paste your Lua script here"
+ExecBox.TextColor3 = Color3.fromRGB(180, 180, 180)
+ExecBox.TextSize = 12
+ExecBox.Font = Enum.Font.Code
+ExecBox.MultiLine = true
+ExecBox.TextXAlignment = Enum.TextXAlignment.Left
+ExecBox.TextYAlignment = Enum.TextYAlignment.Top
+ExecBox.ClearTextOnFocus = false
+ExecBox.Parent = ExecBg
+
+local OutFrame = Instance.new("Frame")
+OutFrame.Size = UDim2.new(0.92, 0, 0, 30)
+OutFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+OutFrame.BorderSizePixel = 0
+OutFrame.LayoutOrder = 2
+OutFrame.Parent = ExecPage
+Instance.new("UICorner", OutFrame).CornerRadius = UDim.new(0, 6)
+
+local OutLabel = Instance.new("TextLabel")
+OutLabel.Size = UDim2.new(1, -8, 1, 0)
+OutLabel.Position = UDim2.new(0, 4, 0, 0)
+OutLabel.BackgroundTransparency = 1
+OutLabel.Text = "Output: Ready"
+OutLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
+OutLabel.TextScaled = true
+OutLabel.Font = Enum.Font.Code
+OutLabel.TextXAlignment = Enum.TextXAlignment.Left
+OutLabel.Parent = OutFrame
+
+local BtnRow = Instance.new("Frame")
+BtnRow.Size = UDim2.new(0.92, 0, 0, 28)
+BtnRow.BackgroundTransparency = 1
+BtnRow.LayoutOrder = 3
+BtnRow.Parent = ExecPage
+
+local ExecBtn = Instance.new("TextButton")
+ExecBtn.Size = UDim2.new(0.48, 0, 1, 0)
+ExecBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ExecBtn.Text = "Execute"
+ExecBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+ExecBtn.TextScaled = true
+ExecBtn.Font = Enum.Font.GothamBold
+ExecBtn.BorderSizePixel = 0
+ExecBtn.Parent = BtnRow
+Instance.new("UICorner", ExecBtn).CornerRadius = UDim.new(0, 6)
+
+local ClearBtn2 = Instance.new("TextButton")
+ClearBtn2.Size = UDim2.new(0.48, 0, 1, 0)
+ClearBtn2.Position = UDim2.new(0.52, 0, 0, 0)
+ClearBtn2.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+ClearBtn2.Text = "Clear"
+ClearBtn2.TextColor3 = Color3.fromRGB(140, 140, 140)
+ClearBtn2.TextScaled = true
+ClearBtn2.Font = Enum.Font.GothamBold
+ClearBtn2.BorderSizePixel = 0
+ClearBtn2.Parent = BtnRow
+Instance.new("UICorner", ClearBtn2).CornerRadius = UDim.new(0, 6)
+
+ExecBtn.MouseButton1Click:Connect(function()
+    local code = ExecBox.Text
+    if code == "" or code == "-- Paste your Lua script here" then
+        OutLabel.Text = "Output: No script."
+        return
+    end
+    local ok, err = pcall(loadstring(code))
+    OutLabel.Text = ok and "Output: OK ✓" or "Error: " .. tostring(err)
+    OutLabel.TextColor3 = ok and Color3.fromRGB(180, 180, 180) or Color3.fromRGB(200, 80, 80)
+end)
+
+ClearBtn2.MouseButton1Click:Connect(function()
+    ExecBox.Text = "-- Paste your Lua script here"
+    OutLabel.Text = "Output: Ready"
+    OutLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
+end)
+
+-- ════════════════════════════════
+--         ESP RENDER
+-- ════════════════════════════════
+local function InitESP(p)
+    if p == LocalPlayer then return end
+    local o = {}
+    o.Box = Drawing.new("Square"); o.Box.Thickness=1.5; o.Box.Filled=false; o.Box.Color=Color3.new(1,1,1)
+    o.BoxFill = Drawing.new("Square"); o.BoxFill.Thickness=1; o.BoxFill.Filled=true; o.BoxFill.Color=Color3.new(1,1,1); o.BoxFill.Transparency=0.88
+    o.Name = Drawing.new("Text"); o.Name.Size=13; o.Name.Center=true; o.Name.Outline=true; o.Name.Color=Color3.new(1,1,1)
+    o.Dist = Drawing.new("Text"); o.Dist.Size=11; o.Dist.Center=true; o.Dist.Outline=true; o.Dist.Color=Color3.fromRGB(180,180,180)
+    o.HPBg = Drawing.new("Square"); o.HPBg.Filled=true; o.HPBg.Color=Color3.fromRGB(20,20,20)
+    o.HP = Drawing.new("Square"); o.HP.Filled=true; o.HP.Color=Color3.fromRGB(200,200,200)
+    o.Head = Drawing.new("Circle"); o.Head.Thickness=1.2; o.Head.Filled=false; o.Head.NumSides=20; o.Head.Color=Color3.new(1,1,1)
+    o.Tracer = Drawing.new("Line"); o.Tracer.Thickness=1; o.Tracer.Transparency=0.4; o.Tracer.Color=Color3.new(1,1,1)
+    State.ESPObjects[p] = o
+end
+
+local function RemoveESP(p)
+    if State.ESPObjects[p] then
+        for _, d in pairs(State.ESPObjects[p]) do pcall(function() d:Remove() end) end
+        State.ESPObjects[p] = nil
+    end
+end
+
+for _, p in pairs(Players:GetPlayers()) do InitESP(p) end
+Players.PlayerAdded:Connect(InitESP)
+Players.PlayerRemoving:Connect(RemoveESP)
+
+RunService.RenderStepped:Connect(function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p == LocalPlayer then continue end
+        local o = State.ESPObjects[p]
+        if not o then continue end
+        local char = p.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local head = char and char:FindFirstChild("Head")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if not State.ESP or not root or not head or not hum or hum.Health<=0 then
+            for _, d in pairs(o) do pcall(function() d.Visible=false end) end
+            continue
+        end
+        local hp3, hv = Camera:WorldToViewportPoint(head.Position)
+        local fp3 = Camera:WorldToViewportPoint(root.Position - Vector3.new(0,3,0))
+        if not hv then for _, d in pairs(o) do pcall(function() d.Visible=false end) end continue end
+        local sx,sy = hp3.X, hp3.Y
+        local bx,by = fp3.X, fp3.Y
+        local ht = math.abs(by-sy)
+        local wd = ht*0.55
+        local hr = math.max(4,ht*0.12)
+        local lr = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local dist = lr and math.floor((lr.Position-root.Position).Magnitude) or 0
+        local hpR = math.clamp(hum.Health/hum.MaxHealth,0,1)
+        o.BoxFill.Position=Vector2.new(sx-wd/2,sy); o.BoxFill.Size=Vector2.new(wd,ht); o.BoxFill.Visible=true
+        o.Box.Position=Vector2.new(sx-wd/2,sy); o.Box.Size=Vector2.new(wd,ht); o.Box.Visible=true
+        o.Head.Position=Vector2.new(sx,sy-hr); o.Head.Radius=hr; o.Head.Visible=true
+        o.Name.Text=p.DisplayName; o.Name.Position=Vector2.new(sx,sy-hr*2-3); o.Name.Visible=true
+        o.Dist.Text=dist.."m"; o.Dist.Position=Vector2.new(sx,by+2); o.Dist.Visible=true
+        local bX=sx-wd/2-7
+        o.HPBg.Position=Vector2.new(bX-2,sy); o.HPBg.Size=Vector2.new(5,ht); o.HPBg.Visible=true
+        o.HP.Position=Vector2.new(bX-2,sy+ht*(1-hpR)); o.HP.Size=Vector2.new(5,ht*hpR); o.HP.Visible=true
+        o.Tracer.From=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y)
+        o.Tracer.To=Vector2.new(bx,by); o.Tracer.Visible=true
+    end
+end)
+
+-- ════════════════════════════════
+--        AIMBOT RENDER
+-- ════════════════════════════════
+local AFOV = Drawing.new("Circle")
+AFOV.Thickness=1; AFOV.Filled=false; AFOV.NumSides=64; AFOV.Color=Color3.fromRGB(180,180,180)
+
+RunService.RenderStepped:Connect(function()
+    AFOV.Position=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+    AFOV.Radius=State.AimbotFOV; AFOV.Visible=State.Aimbot
+    if State.Aimbot and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local best,bd=nil,math.huge
+        local ctr=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+        for _,p in pairs(Players:GetPlayers()) do
+            if p==LocalPlayer then continue end
+            local h=p.Character and p.Character:FindFirstChild(State.AimPart)
+            if not h then continue end
+            local s,v=Camera:WorldToViewportPoint(h.Position)
+            if not v then continue end
+            local d=(Vector2.new(s.X,s.Y)-ctr).Magnitude
+            if d<State.AimbotFOV and d<bd then best=h;bd=d end
+        end
+        if best then
+            Camera.CFrame=Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position,best.Position),State.AimbotSmoothing)
+        end
+    end
+end)
+
+-- ════════════════════════════════
+--       LOOP FLING HEARTBEAT
+-- ════════════════════════════════
+RunService.Heartbeat:Connect(function()
+    if not State.LoopFling then return end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p==LocalPlayer then continue end
+        local tr=p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+        local lr=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if tr and lr then
+            lr.CFrame=tr.CFrame
+            tr.Velocity=Vector3.new(math.random(-500,500),800,math.random(-500,500))
+        end
+    end
+end)
+
+-- ════════════════════════════════
+--       FREE CAM HEARTBEAT
+-- ════════════════════════════════
+RunService.RenderStepped:Connect(function()
+    if not State.FreeCAM then return end
+    local spd = 0.8
+    local cf = Camera.CFrame
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then Camera.CFrame=cf*CFrame.new(0,0,-spd) end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then Camera.CFrame=cf*CFrame.new(0,0,spd) end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then Camera.CFrame=cf*CFrame.new(-spd,0,0) end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then Camera.CFrame=cf*CFrame.new(spd,0,0) end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then Camera.CFrame=cf*CFrame.new(0,spd,0) end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then Camera.CFrame=cf*CFrame.new(0,-spd,0) end
+end)
+
+-- ════════════════════════════════
+--       KEYBIND: RightShift
+-- ════════════════════════════════
+UserInputService.InputBegan:Connect(function(i, gpe)
+    if gpe then return end
+    if i.KeyCode == Enum.KeyCode.RightShift then
+        Main.Visible = not Main.Visible
+    end
+end)
+
+print("[NOXIN] Loaded — RightShift to toggle")
